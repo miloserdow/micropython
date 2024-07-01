@@ -126,3 +126,15 @@ typedef long mp_off_t;
 extern const struct _mp_print_t mp_stderr_print;
 
 uint32_t mp_js_random_u32(void);
+
+#define MICROPY_PY_NEAR (1)
+
+#if MICROPY_PY_NEAR
+extern const struct _mp_obj_module_t mp_module_near;
+#define MICROPY_PY_NEAR_DEF { MP_ROM_QSTR(MP_QSTR_near), MP_ROM_PTR(&mp_module_near) },
+#else
+#define MICROPY_PY_NEAR_DEF
+#endif
+
+#define MICROPY_PORT_BUILTIN_MODULES \
+    MICROPY_PY_NEAR_DEF

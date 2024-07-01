@@ -123,6 +123,12 @@ SRC_JS += \
 	objpyproxy.js \
 	proxy_js.js \
 
+SRC_C_RELOCATABLE = \
+    near_api.c \
+    modnear.c
+
+SRC_C_ALL_RELOCATABLE = $(SRC_C) $(SRC_C_RELOCATABLE)
+
 OBJ += $(PY_O)
 OBJ += $(addprefix $(BUILD)/, $(SRC_SHARED:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
@@ -157,3 +163,41 @@ test_min: $(BUILD)/micropython.min.mjs $(TOP)/tests/run-tests.py
 # Remaining make rules.
 
 include $(TOP)/py/mkrules.mk
+
+################################################################################
+# Relocatable WebAssembly build
+
+RELOCATABLE_BUILD = $(BUILD)/micropython_relocatable.wasm
+RELOCATABLE_PY_O = $(addprefix $(BUILD)/, $(PY_CORE_O_BASENAME:.o=.relocatable.o))
+RELOCATABLE_EXTMOD_O = $(addprefix $(BUILD)/, $(EXTMOD_O_BASENAME:.o=.relocatable.o))
+RELOCATABLE_PORT_O = $(addprefix $(BUILD)/, $(SRC_C_ALL_RELOCATABLE:.c=.relocatable.o) $(SRC_SHARED:.c=.relocatable.o))
+RELOCATABLE_OBJ = $(RELOCATABLE_PY_O) $(RELOCATABLE_EXTMOD_O) $(RELOCATABLE_PORT_O)
+
+# Flags for relocatable build
+RELOCATABLE_CFLAGS = $(CFLAGS) -fPIC
+RELOCATABLE_JSFLAGS = -s SIDE_MODULE=2 -s LINKABLE=1 -s EXPORT_ALL=1 -s WASM_BIGINT=1
+
+# Rules to build relocatable object files
+$(BUILD)/%.relocatable.o: %.c
+	$(ECHO) "CC $<"
+	$(Q)$(CC) $(RELOCATABLE_CFLAGS) -c $< -o $@
+
+$(BUILD)/%.relocatable.o: $(BUILD)/%.c
+	$(ECHO) "CC $<"
+	$(Q)$(CC) $(RELOCATABLE_CFLAGS) -c $< -o $@
+
+# Target for building the relocatable WebAssembly module
+.PHONY: relocatable
+relocatable: $(RELOCATABLE_BUILD)
+
+$(RELOCATABLE_BUILD): $(RELOCATABLE_OBJ)
+	$(ECHO) "LINK $@"
+	$(Q)$(CC) $(LDFLAGS) -o $@ $(RELOCATABLE_OBJ) $(RELOCATABLE_JSFLAGS)
+
+# Clean rule for relocatable build
+.PHONY: clean_relocatable
+clean_relocatable:
+	$(RM) -f $(RELOCATABLE_OBJ) $(RELOCATABLE_BUILD)
+
+# Add relocatable to the clean target
+clean: clean_relocatable
