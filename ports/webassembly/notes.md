@@ -42,6 +42,19 @@ Problems with mp_init() - in runtime - Near VM compilation fails
 Might be a linking issue, or memory handling issue, for example this code would cause the same error:
 
 
+```c
+    #define MICROPY_HEAP_SIZE (32 * 1024)
+    static char heap[MICROPY_HEAP_SIZE];
+
+    __attribute__((export_name("hello_easy_c")))
+    void hello_easy_c() {
+    
+        uint32_t result = 42;
+        *((int32_t*)heap) = result;
+        value_return((uint64_t)heap, sizeof(int32_t));
+    }
+```
+
 Error:
    0: Error: An error occurred during a `FunctionCall` Action, parameter is debug message.
       CompilationError(PrepareError(Memory))
