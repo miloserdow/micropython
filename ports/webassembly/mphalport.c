@@ -35,7 +35,7 @@ static void stderr_print_strn(void *env, const char *str, size_t len) {
 
 const mp_print_t mp_stderr_print = {NULL, stderr_print_strn};
 
-mp_uint_t mp_hal_stdout_tx_strn(const char *str, size_t len) {
+mp_uint_t __attribute__((weak)) mp_hal_stdout_tx_strn(const char *str, size_t len) {
     return write(1, str, len);
 }
 

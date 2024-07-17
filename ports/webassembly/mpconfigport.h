@@ -45,41 +45,41 @@
 #define MICROPY_ENABLE_GC           (1)
 #define MICROPY_ENABLE_PYSTACK      (1)
 #define MICROPY_STACK_CHECK         (0)
-#define MICROPY_KBD_EXCEPTION       (1)
-#define MICROPY_REPL_EVENT_DRIVEN   (1)
+#define MICROPY_KBD_EXCEPTION       (0)
+#define MICROPY_REPL_EVENT_DRIVEN   (0)
 #define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_MPZ)
 #define MICROPY_ENABLE_DOC_STRING   (1)
 #define MICROPY_WARNINGS            (1)
 #define MICROPY_ERROR_PRINTER       (&mp_stderr_print)
 #define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_DOUBLE)
 #define MICROPY_USE_INTERNAL_ERRNO  (1)
-#define MICROPY_USE_INTERNAL_PRINTF (0)
+#define MICROPY_USE_INTERNAL_PRINTF (1)
 
 #define MICROPY_EPOCH_IS_1970       (1)
-#define MICROPY_PY_ASYNCIO_TASK_QUEUE_PUSH_CALLBACK (1)
-#define MICROPY_PY_RANDOM_SEED_INIT_FUNC (mp_js_random_u32())
-#define MICROPY_PY_TIME_GMTIME_LOCALTIME_MKTIME (1)
-#define MICROPY_PY_TIME_TIME_TIME_NS (1)
-#define MICROPY_PY_TIME_INCLUDEFILE "ports/webassembly/modtime.c"
+#define MICROPY_PY_ASYNCIO_TASK_QUEUE_PUSH_CALLBACK (0)
+//#define MICROPY_PY_RANDOM_SEED_INIT_FUNC (mp_js_random_u32())
+#define MICROPY_PY_TIME_GMTIME_LOCALTIME_MKTIME (0)
+#define MICROPY_PY_TIME_TIME_TIME_NS (0)
+//#define MICROPY_PY_TIME_INCLUDEFILE "ports/webassembly/modtime.c"
 #ifndef MICROPY_VFS
-#define MICROPY_VFS                 (1)
+#define MICROPY_VFS                 (0)
 #endif
-#define MICROPY_VFS_POSIX           (MICROPY_VFS)
+#define MICROPY_VFS_POSIX           (0)
 #define MICROPY_PY_SYS_PLATFORM     "webassembly"
 
 #ifndef MICROPY_PY_JS
-#define MICROPY_PY_JS (MICROPY_CONFIG_ROM_LEVEL_AT_LEAST_EXTRA_FEATURES)
+#define MICROPY_PY_JS (0)
 #endif
 
 #ifndef MICROPY_PY_JSFFI
-#define MICROPY_PY_JSFFI (MICROPY_CONFIG_ROM_LEVEL_AT_LEAST_EXTRA_FEATURES)
+#define MICROPY_PY_JSFFI (0)
 #endif
 
-#define MICROPY_EVENT_POLL_HOOK \
-    do { \
-        extern void mp_handle_pending(bool); \
-        mp_handle_pending(true); \
-    } while (0);
+//#define MICROPY_EVENT_POLL_HOOK \
+//    do { \
+//        extern void mp_handle_pending(bool); \
+//        mp_handle_pending(true); \
+//    } while (0);
 
 // Whether the VM will periodically call mp_js_hook(), which checks for
 // interrupt characters on stdin (or equivalent input).

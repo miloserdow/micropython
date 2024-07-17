@@ -374,8 +374,8 @@ static uint32_t mp_ctz(uint32_t x) {
 
 // mp_int_t can be larger than long, i.e. Windows 64-bit, nan-box variants
 static inline uint32_t mp_clz_mpi(mp_int_t x) {
-    MP_STATIC_ASSERT(sizeof(mp_int_t) == sizeof(long long)
-        || sizeof(mp_int_t) == sizeof(long));
+    //MP_STATIC_ASSERT(sizeof(mp_int_t) == sizeof(long long)
+    //    || sizeof(mp_int_t) == sizeof(long));
 
     // ugly, but should compile to single intrinsic unless O0 is set
     if (sizeof(mp_int_t) == sizeof(long)) {

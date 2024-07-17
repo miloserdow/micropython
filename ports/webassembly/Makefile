@@ -46,7 +46,7 @@ INC += -I$(BUILD)
 INC += -I$(VARIANT_DIR)
 
 CFLAGS += -std=c99 -Wall -Werror -Wdouble-promotion -Wfloat-conversion
-CFLAGS += -Os -DNDEBUG
+CFLAGS += -Oz -fdata-sections -ffunction-sections -DNDEBUG
 CFLAGS += $(INC)
 
 EXPORTED_FUNCTIONS_EXTRA += ,\
@@ -107,6 +107,7 @@ SRC_SHARED = $(addprefix shared/,\
 	)
 
 SRC_C += \
+    mp_stubs.c \
 	lexer_dedent.c \
 	main.c \
 	modjs.c \
@@ -164,40 +165,28 @@ test_min: $(BUILD)/micropython.min.mjs $(TOP)/tests/run-tests.py
 
 include $(TOP)/py/mkrules.mk
 
-################################################################################
-# Relocatable WebAssembly build
+OBJ_EXCLUDE = \
+    $(BUILD)/py/modio.o \
+    $(BUILD)/py/modsys.o \
+    $(BUILD)/py/modbuiltins.o
 
-RELOCATABLE_BUILD = $(BUILD)/micropython_relocatable.wasm
-RELOCATABLE_PY_O = $(addprefix $(BUILD)/, $(PY_CORE_O_BASENAME:.o=.relocatable.o))
-RELOCATABLE_EXTMOD_O = $(addprefix $(BUILD)/, $(EXTMOD_O_BASENAME:.o=.relocatable.o))
-RELOCATABLE_PORT_O = $(addprefix $(BUILD)/, $(SRC_C_ALL_RELOCATABLE:.c=.relocatable.o) $(SRC_SHARED:.c=.relocatable.o))
-RELOCATABLE_OBJ = $(RELOCATABLE_PY_O) $(RELOCATABLE_EXTMOD_O) $(RELOCATABLE_PORT_O)
 
-# Flags for relocatable build
-RELOCATABLE_CFLAGS = $(CFLAGS) -fPIC
-RELOCATABLE_JSFLAGS = -s SIDE_MODULE=2 -s LINKABLE=1 -s EXPORT_ALL=1 -s WASM_BIGINT=1
+#OBJ_WASM = $(filter-out $(OBJ_EXCLUDE),$(OBJ))
+OBJ_WASM = $(OBJ)
+OBJ_WASM += $(BUILD)/mp_stubs.o
 
-# Rules to build relocatable object files
-$(BUILD)/%.relocatable.o: %.c
+WASM_CFLAGS = -O0 -std=c99 -Wall -Werror -Wdouble-promotion -Wfloat-conversion $(INC)
+WASM_LDFLAGS = -Wl,--gc-sections -sSTANDALONE_WASM=0 -sSINGLE_FILE=1 -sALLOW_MEMORY_GROWTH=0 -sWASM_BIGINT=1
+
+wasm: $(BUILD)/custom_wasm.o $(OBJ_WASM)
+	$(ECHO) "LINK $@ $(OBJ_WASM)"
+	$(Q)emcc $(WASM_CFLAGS) $(WASM_LDFLAGS) \
+		-o $(BUILD)/micropython.wasm \
+		$^ \
+		-s IMPORTED_MEMORY=0 -s ERROR_ON_UNDEFINED_SYMBOLS=0 \
+		-sEXPORTED_FUNCTIONS='["_mp_sum","_c_sum","_sanity_check"]' \
+		--no-entry
+
+$(BUILD)/custom_wasm.o: custom_wasm.c
 	$(ECHO) "CC $<"
-	$(Q)$(CC) $(RELOCATABLE_CFLAGS) -c $< -o $@
-
-$(BUILD)/%.relocatable.o: $(BUILD)/%.c
-	$(ECHO) "CC $<"
-	$(Q)$(CC) $(RELOCATABLE_CFLAGS) -c $< -o $@
-
-# Target for building the relocatable WebAssembly module
-.PHONY: relocatable
-relocatable: $(RELOCATABLE_BUILD)
-
-$(RELOCATABLE_BUILD): $(RELOCATABLE_OBJ)
-	$(ECHO) "LINK $@"
-	$(Q)$(CC) $(LDFLAGS) -o $@ $(RELOCATABLE_OBJ) $(RELOCATABLE_JSFLAGS)
-
-# Clean rule for relocatable build
-.PHONY: clean_relocatable
-clean_relocatable:
-	$(RM) -f $(RELOCATABLE_OBJ) $(RELOCATABLE_BUILD)
-
-# Add relocatable to the clean target
-clean: clean_relocatable
+	$(Q)emcc $(WASM_CFLAGS) -c -o $@ $^
